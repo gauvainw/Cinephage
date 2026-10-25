@@ -61,12 +61,12 @@ const DATE_PARSER_TEST_CASES: { date: string; layout: string; expected: Date }[]
 	{
 		date: '2026-04-24T22:38:22+02:00',
 		layout: 'YYYY-MM-DDTHH:mm:ssZ',
-		expected: new Date(2026, 3, 24, 20, 38, 22, 0)
+		expected: new Date('2026-04-24T20:38:22.000Z')
 	},
 	{
 		date: 'Fri, 24 Apr 2026 04:12:22 +0100',
 		layout: 'ddd, DD MMM YYYY HH:mm:ss ZZ',
-		expected: new Date(2026, 3, 24, 3, 12, 22, 0)
+		expected: new Date('2026-04-24T03:12:22.000Z')
 	},
 	// Real indexer pubDate values commonly carry incidental whitespace from
 	// pretty-printed RSS/XML (leading/trailing, or doubled internal spaces).
@@ -76,12 +76,12 @@ const DATE_PARSER_TEST_CASES: { date: string; layout: string; expected: Date }[]
 	{
 		date: '  Fri, 24 Apr 2026 04:12:22 +0100  ',
 		layout: 'ddd, DD MMM YYYY HH:mm:ss ZZ',
-		expected: new Date(2026, 3, 24, 3, 12, 22, 0)
+		expected: new Date('2026-04-24T03:12:22.000Z')
 	},
 	{
 		date: 'Fri,  24 Apr 2026 04:12:22  +0100',
 		layout: 'ddd, DD MMM YYYY HH:mm:ss ZZ',
-		expected: new Date(2026, 3, 24, 3, 12, 22, 0)
+		expected: new Date('2026-04-24T03:12:22.000Z')
 	},
 	{
 		date: '14.11.2026 13:31',
@@ -91,17 +91,17 @@ const DATE_PARSER_TEST_CASES: { date: string; layout: string; expected: Date }[]
 	{
 		date: '2026-04-2422:38:22 +02:00',
 		layout: 'YYYY-MM-DDHH:mm:ss Z',
-		expected: new Date(2026, 3, 24, 20, 38, 22, 0)
+		expected: new Date('2026-04-24T20:38:22.000Z')
 	},
 	{
 		date: '2026-04-24T22:38:22.123Z',
 		layout: 'YYYY-MM-DDTHH:mm:ss.SSSZ',
-		expected: new Date(2026, 3, 24, 22, 38, 22, 123)
+		expected: new Date('2026-04-24T22:38:22.123Z')
 	},
 	{
 		date: '2026-04-24T22:38:22Z',
 		layout: 'YYYY-MM-DDTHH:mm:ssZ',
-		expected: new Date(2026, 3, 24, 22, 38, 22, 0)
+		expected: new Date('2026-04-24T22:38:22.000Z')
 	}
 ];
 
