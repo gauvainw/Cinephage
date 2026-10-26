@@ -206,6 +206,7 @@
 	});
 
 	function applySetupPreset(forceConfirm = false) {
+		const requestedSelection = getDraftPresetSelection();
 		if (forceConfirm && setupDirty) {
 			pendingConfirm = {
 				title: m.settings_naming_confirmChangePreset(),
@@ -214,28 +215,26 @@
 				confirmVariant: 'warning',
 				onConfirm: () => {
 					pendingConfirm = null;
-					applySetupPresetConfig();
+					applySetupPresetConfig(requestedSelection);
 				}
 			};
 			skipNextSetupApply = true;
 			return;
 		}
 
-		applySetupPresetConfig();
+		applySetupPresetConfig(requestedSelection);
 	}
 
-	function applySetupPresetConfig() {
+	function applySetupPresetConfig(selection: NamingPresetSelection) {
 		config = createNormalizedNamingConfig({
 			...config,
 			...buildConfigFromSetup({
-				serverId: selectedServerPresetId,
-				styleId: selectedStylePresetId,
-				detailId: selectedDetailPresetId
+				serverId: selection.selectedServerPresetId,
+				styleId: selection.selectedStylePresetId,
+				detailId: selection.selectedDetailPresetId
 			})
 		});
-		selectedPresetId = '';
-		activeSetupSignature = `${selectedServerPresetId}|${selectedStylePresetId}|${selectedDetailPresetId}`;
-		setupDirty = false;
+		applyPresetSelection({ ...selection, selectedCustomPresetId: undefined });
 		error = null;
 	}
 
