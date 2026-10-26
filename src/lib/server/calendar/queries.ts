@@ -272,60 +272,58 @@ export async function getUpcomingItems(
 		});
 	}
 
-	if (items.length < limit) {
-		const movieTmdbIds = tmdbItems.map((item) => item.id);
-		const tvTmdbIds = tmdbTvItems.map((item) => item.id);
-		const [libraryMovies, librarySeries] = await Promise.all([
-			movieTmdbIds.length > 0
-				? db
-						.select({ tmdbId: movies.tmdbId, id: movies.id })
-						.from(movies)
-						.where(inArray(movies.tmdbId, movieTmdbIds))
-				: Promise.resolve([]),
-			tvTmdbIds.length > 0
-				? db.select({ tmdbId: series.tmdbId }).from(series).where(inArray(series.tmdbId, tvTmdbIds))
-				: Promise.resolve([])
-		]);
-		const libraryMovieMap = new Map(libraryMovies.map((m) => [m.tmdbId, m.id]));
-		const libraryMovieTmdbIds = new Set(libraryMovieMap.keys());
-		const librarySeriesTmdbIds = new Set(
-			librarySeries.map((s) => s.tmdbId).filter(Boolean) as number[]
-		);
+	const movieTmdbIds = tmdbItems.map((item) => item.id);
+	const tvTmdbIds = tmdbTvItems.map((item) => item.id);
+	const [libraryMovies, librarySeries] = await Promise.all([
+		movieTmdbIds.length > 0
+			? db
+					.select({ tmdbId: movies.tmdbId, id: movies.id })
+					.from(movies)
+					.where(inArray(movies.tmdbId, movieTmdbIds))
+			: Promise.resolve([]),
+		tvTmdbIds.length > 0
+			? db.select({ tmdbId: series.tmdbId }).from(series).where(inArray(series.tmdbId, tvTmdbIds))
+			: Promise.resolve([])
+	]);
+	const libraryMovieMap = new Map(libraryMovies.map((m) => [m.tmdbId, m.id]));
+	const libraryMovieTmdbIds = new Set(libraryMovieMap.keys());
+	const librarySeriesTmdbIds = new Set(
+		librarySeries.map((s) => s.tmdbId).filter(Boolean) as number[]
+	);
 
-		for (const item of tmdbItems) {
-			if (items.length >= limit) break;
-			const releaseDate = item.release_date;
-			if (!releaseDate || releaseDate < today) continue;
-			const inLibrary = libraryMovieTmdbIds.has(item.id);
-			if (!showNonLibraryMovies && !inLibrary) continue;
-			if (!inLibrary && excludeAdult && item.adult === true) continue;
+	for (const item of tmdbItems) {
+		const releaseDate = item.release_date;
+		if (!releaseDate || releaseDate < today) continue;
+		const inLibrary = libraryMovieTmdbIds.has(item.id);
+		if (!showNonLibraryMovies && !inLibrary) continue;
+		if (!inLibrary && excludeAdult && item.adult === true) continue;
+		items.push({
+			type: 'movie',
+			date: releaseDate,
+			title: item.title ?? item.original_title ?? 'Unknown',
+			posterPath: item.poster_path,
+			tmdbId: item.id,
+			movieId: inLibrary ? libraryMovieMap.get(item.id) : undefined
+		});
+	}
+
+	if (showNonLibraryMovies) {
+		for (const item of tmdbTvItems) {
+			if (librarySeriesTmdbIds.has(item.id)) continue;
+			if (excludeAdult && item.adult === true) continue;
 			items.push({
-				type: 'movie',
-				date: releaseDate,
-				title: item.title ?? item.original_title ?? 'Unknown',
+				type: 'episode',
+				date: today,
+				title: item.name ?? item.original_name ?? m.common_unknown(),
 				posterPath: item.poster_path,
 				tmdbId: item.id,
-				movieId: inLibrary ? libraryMovieMap.get(item.id) : undefined
+				subtitle: m.calendar_airingNow()
 			});
-		}
-
-		if (showNonLibraryMovies) {
-			for (const item of tmdbTvItems) {
-				if (items.length >= limit) break;
-				if (librarySeriesTmdbIds.has(item.id)) continue;
-				if (excludeAdult && item.adult === true) continue;
-				items.push({
-					type: 'episode',
-					date: today,
-					title: item.name ?? item.original_name ?? m.common_unknown(),
-					posterPath: item.poster_path,
-					tmdbId: item.id,
-					subtitle: m.calendar_airingNow()
-				});
-			}
 		}
 	}
 
+	// Limit only after merging and sorting all sources. Truncating while collecting
+	// can discard earlier releases returned later by TMDB or from another source.
 	items.sort((a, b) => a.date.localeCompare(b.date));
 
 	return items.slice(0, limit);
